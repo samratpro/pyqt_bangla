@@ -40,8 +40,9 @@ def enable_bangla_typing(line_edit: QLineEdit, language="Bangla"):
     if not line_edit:
         raise ValueError("QLineEdit widget is not valid!")
 
-    # Store the original keyPressEvent method
-    original_keyPressEvent = line_edit.keyPressEvent
+    # Store the original keyPressEvent method if not already stored
+    if not hasattr(line_edit, "_original_keyPressEvent"):
+        line_edit._original_keyPressEvent = line_edit.keyPressEvent
 
     def keyPressEvent(event: QKeyEvent):
         if language == "Bangla":
@@ -80,7 +81,7 @@ def enable_bangla_typing(line_edit: QLineEdit, language="Bangla"):
             }
 
             if ctrl_pressed:
-                original_keyPressEvent(event)
+                line_edit._original_keyPressEvent(event)
             elif event.key() in key_mappings:
                 char = key_mappings[event.key()]
 
@@ -108,13 +109,19 @@ def enable_bangla_typing(line_edit: QLineEdit, language="Bangla"):
                         # Insert the character at the cursor position
                         line_edit.insert(char)
             else:
-                original_keyPressEvent(event)
+                line_edit._original_keyPressEvent(event)
         else:
-            # If the language is not Bangla, call the original keyPressEvent
-            original_keyPressEvent(event)
+            # If the language is not Bangla, restore the original keyPressEvent
+            line_edit.keyPressEvent = line_edit._original_keyPressEvent
+            line_edit._original_keyPressEvent(event)
 
     # Replace the keyPressEvent of the QLineEdit widget
-    line_edit.keyPressEvent = keyPressEvent
+    if language == "Bangla":
+        line_edit.keyPressEvent = keyPressEvent
+    else:
+        # Restore the original keyPressEvent if the language is not Bangla
+        line_edit.keyPressEvent = line_edit._original_keyPressEvent
+
 
 def combine_vowel_sign(consonant: str, vowel_sign: str) -> str:
     """
