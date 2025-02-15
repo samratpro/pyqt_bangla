@@ -32,81 +32,86 @@ else:  # PyQt5
     Key = Qt
     Modifier = Qt
 
-def enable_bangla_typing(line_edit: QLineEdit):
+def enable_bangla_typing(line_edit: QLineEdit, language="Bangla"):
     """
     Enables Bangla typing for the given QLineEdit widget by overriding its keyPressEvent.
+    If the language is not "Bangla", the original keyPressEvent is restored.
     """
     if not line_edit:
         raise ValueError("QLineEdit widget is not valid!")
 
+    # Store the original keyPressEvent method
+    original_keyPressEvent = line_edit.keyPressEvent
+
     def keyPressEvent(event: QKeyEvent):
-        # Check if Shift is pressed
-        shift_pressed = event.modifiers() & Modifier.ShiftModifier
-        # Check if Ctrl is pressed
-        ctrl_pressed = event.modifiers() & Modifier.ControlModifier
+        if language == "Bangla":
+            shift_pressed = event.modifiers() & Qt.KeyboardModifier.ShiftModifier
+            ctrl_pressed = event.modifiers() & Qt.KeyboardModifier.ControlModifier
+            # Bangla key mappings
+            key_mappings = {
+                Qt.Key.Key_Q: "ং" if shift_pressed else "ঙ",
+                Qt.Key.Key_W: "য়" if shift_pressed else "য",
+                Qt.Key.Key_E: "ঢ" if shift_pressed else "ড",
+                Qt.Key.Key_R: "ফ" if shift_pressed else "প",
+                Qt.Key.Key_T: "ঠ" if shift_pressed else "ট",
+                Qt.Key.Key_Y: "ছ" if shift_pressed else "চ",
+                Qt.Key.Key_U: "ঝ" if shift_pressed else "জ",
+                Qt.Key.Key_I: "ঞ" if shift_pressed else "হ",
+                Qt.Key.Key_O: "ঘ" if shift_pressed else "গ",
+                Qt.Key.Key_P: "ঢ়" if shift_pressed else "ড়",
+                Qt.Key.Key_A: "র্" if shift_pressed else "ৃ",
+                Qt.Key.Key_S: "ূ" if shift_pressed else "ু",
+                Qt.Key.Key_D: "ী" if shift_pressed else "ি",
+                Qt.Key.Key_F: "অ" if shift_pressed else "া",
+                Qt.Key.Key_G: "।" if shift_pressed else "্",
+                Qt.Key.Key_H: "ভ" if shift_pressed else "ব",
+                Qt.Key.Key_J: "খ" if shift_pressed else "ক",
+                Qt.Key.Key_K: "থ" if shift_pressed else "ত",
+                Qt.Key.Key_L: "ধ" if shift_pressed else "দ",
+                Qt.Key.Key_Z: "্য" if shift_pressed else "্র",
+                Qt.Key.Key_X: "ৗ" if shift_pressed else "ও",
+                Qt.Key.Key_C: "ৈ" if shift_pressed else "ে",
+                Qt.Key.Key_V: "ল" if shift_pressed else "র",
+                Qt.Key.Key_B: "ণ" if shift_pressed else "ন",
+                Qt.Key.Key_N: "ষ" if shift_pressed else "স",
+                Qt.Key.Key_M: "শ" if shift_pressed else "ম",
+                Qt.Key.Key_QuoteDbl: "”" if shift_pressed else "’",
+                Qt.Key.Key_Space: " ",  # Space key
+            }
 
-        # Bangla key mappings
-        key_mappings = {
-            Key.Key_Q: "ং" if shift_pressed else "ঙ",
-            Key.Key_W: "য়" if shift_pressed else "য",
-            Key.Key_E: "ঢ" if shift_pressed else "ড",
-            Key.Key_R: "ফ" if shift_pressed else "প",
-            Key.Key_T: "ঠ" if shift_pressed else "ট",
-            Key.Key_Y: "ছ" if shift_pressed else "চ",
-            Key.Key_U: "ঝ" if shift_pressed else "জ",
-            Key.Key_I: "ঞ" if shift_pressed else "হ",
-            Key.Key_O: "ঘ" if shift_pressed else "গ",
-            Key.Key_P: "ঢ়" if shift_pressed else "ড়",
-            Key.Key_A: "র্" if shift_pressed else "ৃ",
-            Key.Key_S: "ূ" if shift_pressed else "ু",
-            Key.Key_D: "ী" if shift_pressed else "ি",
-            Key.Key_F: "অ" if shift_pressed else "া",
-            Key.Key_G: "।" if shift_pressed else "্",
-            Key.Key_H: "ভ" if shift_pressed else "ব",
-            Key.Key_J: "খ" if shift_pressed else "ক",
-            Key.Key_K: "থ" if shift_pressed else "ত",
-            Key.Key_L: "ধ" if shift_pressed else "দ",
-            Key.Key_Z: "্য" if shift_pressed else "্র",
-            Key.Key_X: "ৗ" if shift_pressed else "ও",
-            Key.Key_C: "ৈ" if shift_pressed else "ে",
-            Key.Key_V: "ল" if shift_pressed else "র",
-            Key.Key_B: "ণ" if shift_pressed else "ন",
-            Key.Key_N: "ষ" if shift_pressed else "স",
-            Key.Key_M: "শ" if shift_pressed else "ম",
-            Key.Key_QuoteDbl: "”" if shift_pressed else "’",
-            Key.Key_Space: " ",  # Space key
-        }
+            if ctrl_pressed:
+                original_keyPressEvent(event)
+            elif event.key() in key_mappings:
+                char = key_mappings[event.key()]
 
-        if ctrl_pressed:
-            QLineEdit.keyPressEvent(line_edit, event)
-        elif event.key() in key_mappings:
-            char = key_mappings[event.key()]
-
-            # Handle space key separately
-            if event.key() == Key.Key_Space:
-                line_edit.insert(" ")
-            else:
-                # Handle vowel signs (া, ি, ী, ু, ূ, ে, ৈ, ো, ৌ, etc.)
-                if char in ["া", "ি", "ী", "ু", "ূ", "ে", "ৈ", "ো", "ৌ", "ৃ", "্য", "্র"]:
-                    cursor_position = line_edit.cursorPosition()
-                    if cursor_position > 0:
-                        # Get the character before the cursor
-                        previous_char = line_edit.text()[cursor_position - 1]
-                        combined_char = combine_vowel_sign(previous_char, char)
-                        # Replace the previous character with the combined character
-                        line_edit.setText(line_edit.text()[:cursor_position - 1] + combined_char + line_edit.text()[cursor_position:])
-                        # Move the cursor to the right after inserting the vowel sign
-                        line_edit.setCursorPosition(cursor_position + 2)
-                    else:
-                        # If there's no previous character, just insert the vowel sign
-                        line_edit.insert(char)
-                        # Move the cursor to the right after inserting the vowel sign
-                        line_edit.setCursorPosition(line_edit.cursorPosition() + 1)
+                # Handle space key separately
+                if event.key() == Qt.Key.Key_Space:
+                    line_edit.insert(" ")
                 else:
-                    # Insert the character at the cursor position
-                    line_edit.insert(char)
+                    # Handle vowel signs (া, ি, ী, ু, ূ, ে, ৈ, ো, ৌ, etc.)
+                    if char in ["া", "ি", "ী", "ু", "ূ", "ে", "ৈ", "ো", "ৌ", "ৃ", "্য", "্র"]:
+                        cursor_position = line_edit.cursorPosition()
+                        if cursor_position > 0:
+                            # Get the character before the cursor
+                            previous_char = line_edit.text()[cursor_position - 1]
+                            combined_char = combine_vowel_sign(previous_char, char)
+                            # Replace the previous character with the combined character
+                            line_edit.setText(line_edit.text()[:cursor_position - 1] + combined_char + line_edit.text()[cursor_position:])
+                            # Move the cursor to the right after inserting the vowel sign
+                            line_edit.setCursorPosition(cursor_position + 2)
+                        else:
+                            # If there's no previous character, just insert the vowel sign
+                            line_edit.insert(char)
+                            # Move the cursor to the right after inserting the vowel sign
+                            line_edit.setCursorPosition(line_edit.cursorPosition() + 1)
+                    else:
+                        # Insert the character at the cursor position
+                        line_edit.insert(char)
+            else:
+                original_keyPressEvent(event)
         else:
-            QLineEdit.keyPressEvent(line_edit, event)
+            # If the language is not Bangla, call the original keyPressEvent
+            original_keyPressEvent(event)
 
     # Replace the keyPressEvent of the QLineEdit widget
     line_edit.keyPressEvent = keyPressEvent
@@ -116,7 +121,7 @@ def combine_vowel_sign(consonant: str, vowel_sign: str) -> str:
     Combine a consonant with a vowel sign.
     """
     combinations = {
-        ("অ", "া"): "আ",  # Fix for অ + া = আ
+        ("অ", "া"): "আ",
         ("্", "ি"): "ই",
         ("্", "ী"): "ঈ",
         ("্", "ু"): "উ",
